@@ -20,5 +20,3 @@ class TokenHandler():
             secret_key,
             algorithm='HS256'
         )
-
-print(TokenHandler.get_encoded_token('user', 'secret'))

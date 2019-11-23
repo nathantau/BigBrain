@@ -4,9 +4,11 @@ import json
 import torch
 import numpy as np
 import cv2
+import os
 from PIL import Image
 
 from brain_tumor_detector import Net
+from token_handler import TokenHandler
 
 PATH = 'net.pth'
 CLASSES = ['No Tumor', 'Tumor']
@@ -15,28 +17,30 @@ IMAGE_PATH = 'image.jpg'
 net = Net()
 net.load_state_dict(torch.load(PATH))
 app = Flask(__name__)
-
+app.config['SECRET_KEY'] = os.urandom(24)
 
 @app.route('/')
 def home():
     return jsonify({
-        'message': 'this is home!'
+        'message': 'This is home!'
     })
 
 @app.route('/authorization', methods=['POST'])
 def authorize():
 
-    data = request.json
+    try: 
+        data = request.json
 
-    username = data.get('username')
-    password = data.get('password')
+        username = data.get('username')
+        password = data.get('password') # Unused right now
 
-    
+        return jsonify({
+            'accessToken': str(TokenHandler.get_encoded_token(user_id=username, secret_key=app.config.get('SECRET_KEY')))
+        })
 
-    # we should get the username and password here
-    return data
+    except Exception as ex:
 
-
+        return jsonify(ex)
 
 @app.route('/detect', methods=['POST'])
 def detect():
