@@ -3,9 +3,6 @@ from flask import request, Response, jsonify
 import json
 import torch
 import numpy as np
-import matplotlib
-matplotlib.use('agg')
-from matplotlib import pyplot as plt
 import cv2
 from PIL import Image
 
@@ -22,9 +19,24 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return json.dumps({
-        'msg': 'this is home!'
+    return jsonify({
+        'message': 'this is home!'
     })
+
+@app.route('/authorization', methods=['POST'])
+def authorize():
+
+    data = request.json
+
+    username = data.get('username')
+    password = data.get('password')
+
+    
+
+    # we should get the username and password here
+    return data
+
+
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -48,6 +60,19 @@ def detect():
     return jsonify({
         'result': CLASSES[index]
     })
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
