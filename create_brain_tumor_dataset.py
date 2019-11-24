@@ -6,7 +6,6 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.optim as optim
 import random
-import matplotlib.pyplot as plt
 
 import os
 import cv2

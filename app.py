@@ -38,7 +38,7 @@ def authorize():
         password = data.get('password') # Unused right now
 
         return jsonify({
-            'accessToken': str(TokenHandler.get_encoded_token(user_id=username, secret_key=app.config.get('SECRET_KEY')))
+            'accessToken': str(TokenHandler.get_encoded_token(user_id=username, secret_key=app.config.get('SECRET_KEY')), 'utf8')
         })
 
     except Exception as ex:
@@ -92,4 +92,4 @@ def classify_image(file):
     return CLASSES[index]
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0',port=8080)

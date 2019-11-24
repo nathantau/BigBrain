@@ -10,8 +10,6 @@ import os
 import cv2
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 class Net(nn.Module):
 
     def __init__(self):

@@ -10,8 +10,8 @@ class TokenHandler():
     def get_encoded_token(user_id, secret_key):
 
         payload = {
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(0, seconds=60),
-            'iat': datetime.datetime.utcnow() + datetime.timedelta(0, seconds = 0),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(0, seconds=3600),
+            'iat': datetime.datetime.utcnow(),
             'sub': user_id
         }
 

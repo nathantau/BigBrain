@@ -1,0 +1,6 @@
+PyJWT==1.4.0
+datetime
+opencv-python
+flask
+numpy
+Pillow

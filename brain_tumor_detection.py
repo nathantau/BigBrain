@@ -10,8 +10,6 @@ import os
 import cv2
 import numpy as np
 
-import matplotlib.pyplot as plt
-
 from brain_tumor_detector import Net
 
 NUM_CLASSES = 2
@@ -25,8 +23,8 @@ sample = training_data[0]
 img = sample[0]
 target = sample[1]
 print('target',target)
-plt.imshow(img)
-plt.show()
+# plt.imshow(img)
+# plt.show()
 
 img = torch.from_numpy(img)
 img = img.view(1,1,128,128)
@@ -81,8 +79,8 @@ for epoch in range(NUM_EPOCHS):
         # if you ever want to see the images, uncomment the following lines
         if INVESTIGATION_MODE == True:
             print('target', target)
-            plt.imshow(img)
-            plt.show()
+            # plt.imshow(img)
+            # plt.show()
 
         img = img.view(1,1,128,128)
 
