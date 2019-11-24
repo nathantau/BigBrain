@@ -19,6 +19,10 @@ net.load_state_dict(torch.load(PATH))
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24)
 
+MOCK_DB = {
+    'subs': ['nathan']
+}
+
 @app.route('/')
 def home():
     return jsonify({
@@ -27,7 +31,6 @@ def home():
 
 @app.route('/authorization', methods=['POST'])
 def authorize():
-
     try: 
         data = request.json
 
@@ -39,20 +42,45 @@ def authorize():
         })
 
     except Exception as ex:
-
         return jsonify(ex)
 
 @app.route('/detect', methods=['POST'])
 def detect():
 
+    auth_token = request.headers.get('auth-token')
+    if auth_token is None:
+        return get_error('No authentication token provided.', 401)
+
+    decoded_token_obj = 'Pre-decoded-token'
+
+    try:
+        decoded_token_obj = TokenHandler.decode_token(token=auth_token, secret_key=app.config['SECRET_KEY'])
+    except Exception as ex:
+        return get_error(str(ex), 401)
+
+    user_id = decoded_token_obj.get('sub')
+
+    # Do a query for if the user_id exists in DB, then proceed. 
+    # For now, we will mock a daetabase with a dictionary
+    if user_id not in MOCK_DB['subs']:
+        return get_error('Invalid access token', 401)
+
     file = request.files.get('File', '')
+    result = classify_image(file)
+
+    return jsonify({
+        'result': result
+    })
+
+
+def get_error(reason, code):
+    return jsonify({'Reason for failure': reason}), code
+
+def classify_image(file):
     file.save(IMAGE_PATH)
 
     image = cv2.imread(IMAGE_PATH, 0)
     image = cv2.resize(image, (128, 128))
-
-    print('type', type(image))
-    print('size', image.shape)
 
     # preprocess image and make it into the dimensions the network is accepting
     image = torch.from_numpy(image)
@@ -61,23 +89,7 @@ def detect():
     output = net(image)
     index = torch.argmax(output)
 
-    return jsonify({
-        'result': CLASSES[index]
-    })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return CLASSES[index]
 
 if __name__ == '__main__':
     app.run(debug=True)

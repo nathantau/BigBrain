@@ -10,9 +10,9 @@ class TokenHandler():
     def get_encoded_token(user_id, secret_key):
 
         payload = {
-            'expiry_date': str(datetime.datetime.utcnow() + datetime.timedelta(0, seconds=60)),
-            'generated_date': str(datetime.datetime.utcnow()),
-            'subject': user_id
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(0, seconds=60),
+            'iat': datetime.datetime.utcnow() + datetime.timedelta(0, seconds = 0),
+            'sub': user_id
         }
 
         return jwt.encode(
@@ -20,3 +20,8 @@ class TokenHandler():
             secret_key,
             algorithm='HS256'
         )
+
+    @staticmethod
+    def decode_token(token, secret_key):
+        return jwt.decode(token, secret_key)
+
