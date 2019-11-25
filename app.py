@@ -1,10 +1,12 @@
 from flask import Flask
 from flask import request, Response, jsonify
+import bcrypt
 import json
 import torch
 import numpy as np
 import cv2
 import os
+from flask_sqlalchemy import SQLAlchemy
 from PIL import Image
 
 from brain_tumor_detector import Net
@@ -17,7 +19,32 @@ IMAGE_PATH = 'image.jpg'
 net = Net()
 net.load_state_dict(torch.load(PATH))
 app = Flask(__name__)
+app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/appdb'
+# app.config.from_object(os.environ['APP_SETTINGS'])
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+db = SQLAlchemy(app)
+
+class User(db.Model):
+
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    salt = db.Column(db.String(255), primary_key=True, nullable=False)
+    email = db.Column(db.String(255), primary_key=True, nullable=False)
+    password = db.Column(db.String(255), primary_key=True, nullable=False)
+    
+    def __init__(self, email, password):
+        password = password.encode('utf8')
+        self.email = email
+        self.salt = bcrypt.gensalt()
+        self.password = bcrypt.hashpw(password=password, salt=self.salt)
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
 
 MOCK_DB = {
     'subs': ['nathan']
@@ -34,11 +61,32 @@ def authorize():
     try: 
         data = request.json
 
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password') # Unused right now
 
+        # We query to see if the user exists, else we should create a new user
+        # Also we assume that emails are unique...
+
+        users = db.session.query(User).filter_by(email=email).all()
+        
+        for user in users:
+
+            hashed_password = bcrypt.hashpw(password=password, salt=user.salt)
+            # if the hashed password exists, then we know that the user exists
+            if hashed_password == password:
+                return jsonify({
+                    'accessToken': str(TokenHandler.get_encoded_token(user_id=user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+                })
+
+        # Otherwise... we have to create an account
+        new_user = User(email=email, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        new_user = db.session.query(User).filter_by(email=email).first()
+
         return jsonify({
-            'accessToken': str(TokenHandler.get_encoded_token(user_id=username, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+            'accessToken': str(TokenHandler.get_encoded_token(user_id=new_user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
         })
 
     except Exception as ex:
