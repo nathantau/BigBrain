@@ -22,7 +22,6 @@ app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/appdb'
-# app.config.from_object(os.environ['APP_SETTINGS'])
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 db = SQLAlchemy(app)
 
@@ -36,10 +35,10 @@ class User(db.Model):
     password = db.Column(db.String(255), primary_key=True, nullable=False)
     
     def __init__(self, email, password):
-        password = password.encode('utf8')
         self.email = email
         self.salt = bcrypt.gensalt()
-        self.password = bcrypt.hashpw(password=password, salt=self.salt)
+        self.password = bcrypt.hashpw(password=password, salt=self.salt).decode('utf8')
+        self.salt = self.salt.decode('utf8')
 
     def save(self):
         db.session.add(self)
@@ -60,26 +59,23 @@ def home():
 def authorize():
     try: 
         data = request.json
-
         email = data.get('email')
-        password = data.get('password') # Unused right now
+        password = data.get('password')
 
         # We query to see if the user exists, else we should create a new user
-        # Also we assume that emails are unique...
-
         users = db.session.query(User).filter_by(email=email).all()
         
         for user in users:
-
-            hashed_password = bcrypt.hashpw(password=password, salt=user.salt)
+            hashed_password = bcrypt.hashpw(password=password.encode('utf8'), salt=user.salt)
             # if the hashed password exists, then we know that the user exists
             if hashed_password == password:
+                print('this user exists')
                 return jsonify({
                     'accessToken': str(TokenHandler.get_encoded_token(user_id=user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
                 })
 
         # Otherwise... we have to create an account
-        new_user = User(email=email, password=password)
+        new_user = User(email=email, password=password.encode('utf8'))
         db.session.add(new_user)
         db.session.commit()
 
