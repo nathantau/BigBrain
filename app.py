@@ -66,10 +66,9 @@ def authorize():
         users = db.session.query(User).filter_by(email=email).all()
         
         for user in users:
-            hashed_password = bcrypt.hashpw(password=password.encode('utf8'), salt=user.salt)
+            hashed_password = bcrypt.hashpw(password=password.encode('utf8'), salt=user.salt.encode('utf8'))
             # if the hashed password exists, then we know that the user exists
             if hashed_password == password:
-                print('this user exists')
                 return jsonify({
                     'accessToken': str(TokenHandler.get_encoded_token(user_id=user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
                 })
@@ -102,23 +101,29 @@ def detect():
     except Exception as ex:
         return get_error(str(ex), 401)
 
-    user_id = decoded_token_obj.get('sub')
+    sub_user_id = decoded_token_obj.get('sub')
 
     # Do a query for if the user_id exists in DB, then proceed. 
-    # For now, we will mock a daetabase with a dictionary
-    if user_id not in MOCK_DB['subs']:
-        return get_error('Invalid access token', 401)
+    user_ids = db.session.query(User.id).all()
 
-    file = request.files.get('File', '')
-    result = classify_image(file)
+    for user_id in user_ids:
+        user_id = user_id[0]
+        
+        if user_id == sub_user_id:
 
-    return jsonify({
-        'result': result
-    })
+            file = request.files.get('File', '')
+            result = classify_image(file)
+
+            return jsonify({
+                'result': result
+            })
+
+    return get_error('Invalid access token', 401)
 
 
 def get_error(reason, code):
     return jsonify({'Reason for failure': reason}), code
+
 
 def classify_image(file):
     file.save(IMAGE_PATH)
@@ -135,5 +140,6 @@ def classify_image(file):
 
     return CLASSES[index]
 
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0',port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080)
