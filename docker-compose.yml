@@ -1,0 +1,43 @@
+version: '3.3'
+
+services:
+  # application API service
+  api_service:
+    # a name we want our container to be named.
+    container_name: api_service
+
+    # the API image we created earlier on
+    image: bigbrain:latest
+
+    volumes:
+      - '/docker-compose-v2'
+
+    ports:
+    # mapping the container port 5000 to the host port locally on my computer 5001
+      - 8080:8080
+
+    depends_on:
+      - db
+
+    links:
+      - db
+
+    
+  # apostgresql database server service
+  db:
+
+    # container name.
+    container_name: bigbrain-db
+
+    # database image we created earlier on
+    image: bigbrain_database:latest
+
+    # mapping the container port 5432 to the host port locally on my computer 5432
+    # i did this for debugging purposes, so as to access the DB and confirm that indeed 
+    # the database was created and migrations applied.
+
+    # environment: 
+
+
+    ports:
+      - 5432:5432
