@@ -3,6 +3,10 @@
 # a postgres image of any version. the postgres image is the base image for the current image we build with this file
 FROM postgres
 
+ENV POSTGRES_USER=hola
+ENV POSTGRES_PASSWORD=hola
+ENV POSTGRES_DB=bigbrain
+
 # this adds the createdb.sql file to the postgres server folder /docker-entrypoint-initdb.d
 # to run on initial database server start up. on start up, all .sql, .sh files in this folder
 # are run, which makes it the best place to create a database we shall be using.
