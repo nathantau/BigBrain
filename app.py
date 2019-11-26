@@ -1,10 +1,12 @@
 from flask import Flask
 from flask import request, Response, jsonify
+import bcrypt
 import json
 import torch
 import numpy as np
 import cv2
 import os
+from flask_sqlalchemy import SQLAlchemy
 from PIL import Image
 
 from brain_tumor_detector import Net
@@ -17,7 +19,30 @@ IMAGE_PATH = 'image.jpg'
 net = Net()
 net.load_state_dict(torch.load(PATH))
 app = Flask(__name__)
+app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URI']
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+db = SQLAlchemy(app)
+
+class User(db.Model):
+
+    __tablename__ = 'users'
+
+    salt = db.Column(db.String(255), primary_key=True, nullable=False)
+    email = db.Column(db.String(255), primary_key=True, nullable=False)
+    password = db.Column(db.String(255), primary_key=True, nullable=False)
+    
+    def __init__(self, email, password):
+        self.email = email
+        self.salt = bcrypt.gensalt()
+        self.password = bcrypt.hashpw(password=password, salt=self.salt).decode('utf8')
+        self.salt = self.salt.decode('utf8')
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+
 
 MOCK_DB = {
     'subs': ['nathan']
@@ -33,12 +58,29 @@ def home():
 def authorize():
     try: 
         data = request.json
+        email = data.get('email')
+        password = data.get('password')
 
-        username = data.get('username')
-        password = data.get('password') # Unused right now
+        # We query to see if the user exists, else we should create a new user
+        users = db.session.query(User).filter_by(email=email).all()
+        
+        for user in users:
+            hashed_password = bcrypt.hashpw(password=password.encode('utf8'), salt=user.salt.encode('utf8'))
+            # if the hashed password exists, then we know that the user exists
+            if hashed_password == password:
+                return jsonify({
+                    'accessToken': str(TokenHandler.get_encoded_token(user_id=user.email, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+                })
+
+        # Otherwise... we have to create an account
+        new_user = User(email=email, password=password.encode('utf8'))
+        db.session.add(new_user)
+        db.session.commit()
+
+        new_user = db.session.query(User).filter_by(email=email).first()
 
         return jsonify({
-            'accessToken': str(TokenHandler.get_encoded_token(user_id=username, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+            'accessToken': str(TokenHandler.get_encoded_token(user_id=new_user.email, secret_key=app.config.get('SECRET_KEY')), 'utf8')
         })
 
     except Exception as ex:
@@ -58,23 +100,29 @@ def detect():
     except Exception as ex:
         return get_error(str(ex), 401)
 
-    user_id = decoded_token_obj.get('sub')
+    sub_user_id = decoded_token_obj.get('sub')
 
     # Do a query for if the user_id exists in DB, then proceed. 
-    # For now, we will mock a daetabase with a dictionary
-    if user_id not in MOCK_DB['subs']:
-        return get_error('Invalid access token', 401)
+    user_ids = db.session.query(User.email).all()
 
-    file = request.files.get('File', '')
-    result = classify_image(file)
+    for user_id in user_ids:
+        user_id = user_id[0]
+        
+        if user_id == sub_user_id:
 
-    return jsonify({
-        'result': result
-    })
+            file = request.files.get('File', '')
+            result = classify_image(file)
+
+            return jsonify({
+                'result': result
+            })
+
+    return get_error('Invalid access token', 401)
 
 
 def get_error(reason, code):
     return jsonify({'Reason for failure': reason}), code
+
 
 def classify_image(file):
     file.save(IMAGE_PATH)
@@ -91,5 +139,6 @@ def classify_image(file):
 
     return CLASSES[index]
 
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0',port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080)

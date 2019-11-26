@@ -4,3 +4,8 @@ opencv-python
 flask
 numpy
 Pillow
+bcrypt
+Flask-SQLAlchemy
+Flask-Script
+Flask-Migrate
+psycopg2-binary
