@@ -5,16 +5,19 @@ services:
   api_service:
     # a name we want our container to be named.
     container_name: api_service
-
+    restart: always
     # the API image we created earlier on
     image: bigbrain:latest
 
-    volumes:
-      - '/docker-compose-v2'
+    # volumes:
+    #   - '/docker-compose-v2'
 
     ports:
     # mapping the container port 5000 to the host port locally on my computer 5001
       - 8080:8080
+
+    environment: 
+      - POSTGRES_URI=postgres://hola:hola@db/bigbrain
 
     depends_on:
       - db
@@ -36,8 +39,10 @@ services:
     # i did this for debugging purposes, so as to access the DB and confirm that indeed 
     # the database was created and migrations applied.
 
-    # environment: 
-
+    environment:
+      - POSTGRES_USER=hola
+      - POSTGRES_PASSWORD=hola
+      - POSTGRES_DB=bigbrain
 
     ports:
       - 5432:5432

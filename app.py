@@ -21,7 +21,7 @@ net.load_state_dict(torch.load(PATH))
 app = Flask(__name__)
 app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/bigbrain'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['POSTGRES_URI']
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 db = SQLAlchemy(app)
 
@@ -29,7 +29,6 @@ class User(db.Model):
 
     __tablename__ = 'users'
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     salt = db.Column(db.String(255), primary_key=True, nullable=False)
     email = db.Column(db.String(255), primary_key=True, nullable=False)
     password = db.Column(db.String(255), primary_key=True, nullable=False)
@@ -70,7 +69,7 @@ def authorize():
             # if the hashed password exists, then we know that the user exists
             if hashed_password == password:
                 return jsonify({
-                    'accessToken': str(TokenHandler.get_encoded_token(user_id=user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+                    'accessToken': str(TokenHandler.get_encoded_token(user_id=user.email, secret_key=app.config.get('SECRET_KEY')), 'utf8')
                 })
 
         # Otherwise... we have to create an account
@@ -81,7 +80,7 @@ def authorize():
         new_user = db.session.query(User).filter_by(email=email).first()
 
         return jsonify({
-            'accessToken': str(TokenHandler.get_encoded_token(user_id=new_user.id, secret_key=app.config.get('SECRET_KEY')), 'utf8')
+            'accessToken': str(TokenHandler.get_encoded_token(user_id=new_user.email, secret_key=app.config.get('SECRET_KEY')), 'utf8')
         })
 
     except Exception as ex:
@@ -104,7 +103,7 @@ def detect():
     sub_user_id = decoded_token_obj.get('sub')
 
     # Do a query for if the user_id exists in DB, then proceed. 
-    user_ids = db.session.query(User.id).all()
+    user_ids = db.session.query(User.email).all()
 
     for user_id in user_ids:
         user_id = user_id[0]
