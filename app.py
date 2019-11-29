@@ -84,7 +84,7 @@ def authorize():
         })
 
     except Exception as ex:
-        return jsonify(ex)
+        return str(ex)
 
 @app.route('/detect', methods=['POST'])
 def detect():
@@ -98,7 +98,7 @@ def detect():
     try:
         decoded_token_obj = TokenHandler.decode_token(token=auth_token, secret_key=app.config['SECRET_KEY'])
     except Exception as ex:
-        return get_error(str(ex), 401)
+        return str(ex)
 
     sub_user_id = decoded_token_obj.get('sub')
 
