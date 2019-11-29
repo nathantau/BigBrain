@@ -84,21 +84,21 @@ def authorize():
         })
 
     except Exception as ex:
-        return str(ex)
+        return jsonify_error(str(ex), 500)
 
 @app.route('/detect', methods=['POST'])
 def detect():
 
     auth_token = request.headers.get('auth-token')
     if auth_token is None:
-        return get_error('No authentication token provided.', 401)
+        return jsonify_error('No authentication token provided.', 401)
 
     decoded_token_obj = 'Pre-decoded-token'
 
     try:
         decoded_token_obj = TokenHandler.decode_token(token=auth_token, secret_key=app.config['SECRET_KEY'])
     except Exception as ex:
-        return str(ex)
+        return jsonify_error(str(ex), 404)
 
     sub_user_id = decoded_token_obj.get('sub')
 
@@ -117,10 +117,10 @@ def detect():
                 'result': result
             })
 
-    return get_error('Invalid access token', 401)
+    return jsonify_error('Invalid access token', 401)
 
 
-def get_error(reason, code):
+def jsonify_error(reason, code):
     return jsonify({'Reason for failure': reason}), code
 
 
