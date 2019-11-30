@@ -91,8 +91,9 @@ Body:
 
 ```
 File: image_with_no_tumor.png
-
 ```
+
+![Image with no tumor](assets/image_with_no_tumor.jpg)
 
 *Sample Response:* 
 
