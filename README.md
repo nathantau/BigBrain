@@ -8,7 +8,7 @@ In a nutshell, *BigBrain* is a REST API that accepts MRIs of animal brains, and 
 
 The following is an illustration of *BigBrain's* architecture:
 
-![System Design Architecture](https://github.com/nathantau/BigBrain/tree/master/assets)
+![System Design Architecture](assets/BigBrainSystemDesign.jpg)
 
 ---
 
