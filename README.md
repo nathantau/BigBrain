@@ -40,6 +40,10 @@ I developed this API with the following tech stack:
 
 - Pytorch: I definitely prefer Pytorch over Tensorflow, as it is more Pythonic in nature and the machine learning aspect definitely feels more hands-on. I used Pytorch to create a convolutional neural network capable of binary classification (Tumor / No tumor), and trained it using the images I preprocessed.
 
+The following is a video demonstration of the machine learning component of this API. The model was trained for approximately 3 hours, after numerous, vigorous experimentations on the model's configuration.
+
+[![Video Demonstration](https://img.youtube.com/vi/TUele6wxK6Y/0.jpg)](https://www.youtube.com/watch?v=TUele6wxK6Y)
+
 ---
 
 ## REST Endpoints (for now!)
